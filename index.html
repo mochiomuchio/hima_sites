@@ -486,6 +486,23 @@
             transform: translate(-50%, -50%) scale(1);
             transition: transform 0.6s ease-out, opacity 0.6s ease-out;
         }
+
+        /* クリッカーショップボタン用 */
+        .shop-btn {
+            transition: transform 0.2s, box-shadow 0.2s;
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .shop-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.4) !important;
+            border-color: #00ff66 !important;
+        }
+
+        .shop-btn:active {
+            transform: scale(0.95);
+        }
     </style>
     <!-- Google Fontsのインポート -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -646,10 +663,51 @@
                 <!-- 初期はダミー画像、JSでYouTubeアイコンに差し替わります -->
                 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2300ff66'/%3E%3Ctext x='50' y='55' font-size='20' text-anchor='middle' fill='%23000' font-family='sans-serif' font-weight='bold'%3ECLICK!%3C/text%3E%3C/svg%3E"
                     alt="Click Me" id="clicker-img"
-                    style="width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 0 25px var(--primary-color); object-fit: cover;">
+                    style="width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 0 25px var(--primary-color); object-fit: cover; border: 3px solid transparent;">
             </button>
             <p id="clicker-message"
                 style="margin-top: 1rem; color: #ff0055; font-weight: bold; min-height: 1.5rem; font-size: 1.2rem;"></p>
+
+            <!-- アップグレード ショップ -->
+            <div id="hima-shop"
+                style="margin-top: 2rem; background-color: rgba(0, 0, 0, 0.3); border-radius: 15px; padding: 1.5rem;">
+                <h3
+                    style="color: var(--primary-color); margin-bottom: 1.5rem; text-shadow: 0 0 10px rgba(0, 255, 102, 0.3);">
+                    🛒 アップグレードショップ 🛒</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+
+                    <button class="shop-btn" id="shop-auto-click"
+                        style="background-color: var(--surface-color); border: 1px solid var(--primary-color); color: #fff; padding: 1rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+                        <span style="font-size: 1.2rem; font-weight: bold;">🤖 オートクリッカー</span>
+                        <span style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">毎秒自動でクリック！</span>
+                        <span style="color: yellow; margin-top: 0.5rem; font-weight: bold; font-size: 1.1rem;"
+                            id="cost-auto-click">50 HP</span>
+                        <span style="font-size: 0.9rem; color: #aaa; margin-top: 0.2rem;" id="level-auto-click">Lv.
+                            0</span>
+                    </button>
+
+                    <button class="shop-btn" id="shop-power"
+                        style="background-color: var(--surface-color); border: 1px solid var(--primary-color); color: #fff; padding: 1rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+                        <span style="font-size: 1.2rem; font-weight: bold;">💪 クリックパワーUP</span>
+                        <span
+                            style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">1回クリックで獲得+1</span>
+                        <span style="color: yellow; margin-top: 0.5rem; font-weight: bold; font-size: 1.1rem;"
+                            id="cost-power">100 HP</span>
+                        <span style="font-size: 0.9rem; color: #aaa; margin-top: 0.2rem;" id="level-power">Lv. 1</span>
+                    </button>
+
+                    <button class="shop-btn" id="shop-aura"
+                        style="background-color: var(--surface-color); border: 1px solid gold; color: #fff; padding: 1rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);">
+                        <span style="font-size: 1.2rem; font-weight: bold; color: gold;">✨ 黄金のオーラ</span>
+                        <span
+                            style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">アイコンが永遠に光り輝く</span>
+                        <span style="color: yellow; margin-top: 0.5rem; font-weight: bold; font-size: 1.1rem;"
+                            id="cost-aura">500 HP</span>
+                        <span style="font-size: 0.9rem; color: #aaa; margin-top: 0.2rem;" id="level-aura">未解放</span>
+                    </button>
+
+                </div>
+            </div>
         </section>
 
         <!-- Discordコミュニティ セクション -->
@@ -1086,12 +1144,35 @@
 
             if (!scoreEl || !btn) return;
 
-            // スコア復元
             let score = parseInt(localStorage.getItem('site_hima_score') || '0', 10);
+            let clickPower = parseInt(localStorage.getItem('site_hima_power') || '1', 10);
+            let autoLevel = parseInt(localStorage.getItem('site_hima_auto') || '0', 10);
+            let hasAura = localStorage.getItem('site_hima_aura') === 'true';
+
             scoreEl.textContent = score;
 
+            // ショップUIの更新
+            function getAutoCost() { return 50 * Math.pow(2, autoLevel); }
+            function getPowerCost() { return 100 * Math.pow(2, clickPower - 1); }
+
+            function updateShopUI() {
+                document.getElementById('cost-auto-click').textContent = getAutoCost() + " HP";
+                document.getElementById('level-auto-click').textContent = "Lv. " + autoLevel;
+                document.getElementById('cost-power').textContent = getPowerCost() + " HP";
+                document.getElementById('level-power').textContent = "Lv. " + clickPower;
+
+                if (hasAura) {
+                    document.getElementById('cost-aura').textContent = "購入済";
+                    document.getElementById('level-aura').textContent = "解放済";
+                    img.style.border = "5px solid gold";
+                    img.style.boxShadow = "0 0 40px gold";
+                }
+            }
+            updateShopUI();
+
+            // 手動クリック処理
             btn.addEventListener('click', () => {
-                score++;
+                score += clickPower;
                 localStorage.setItem('site_hima_score', score);
                 scoreEl.textContent = score;
 
@@ -1099,18 +1180,80 @@
                 img.style.transform = 'scale(0.9)';
                 setTimeout(() => img.style.transform = 'scale(1)', 80);
 
-                // 隠し要素：マイルストーンでエフェクト & 色変え
-                if (score === 100) {
-                    msgEl.textContent = "🏆 100HP達成！サイトが覚醒しました！";
-                    document.documentElement.style.setProperty('--primary-color', '#ff00ff'); // 虹色のかわりにピンク覚醒
-                    document.documentElement.style.setProperty('--accent-glow', '0 0 25px rgba(255,0,255,0.6)');
-                    img.style.boxShadow = '0 0 30px #ff00ff';
+                if (score === 100 && !hasAura && autoLevel === 0 && clickPower === 1) {
+                    msgEl.textContent = "🏆 100HP到達！ショップで強化してみよう！";
                     createConfetti();
-                } else if (score > 0 && score % 50 === 0) {
-                    msgEl.textContent = `🔥 ${score}HP達成！いい調子！`;
+                } else if (score > 0 && score % 50 === 0 && score <= 200) {
+                    msgEl.textContent = `🔥 ${score}HP達成！`;
                     createConfetti();
-                    // 少ししたらメッセージを消す
-                    setTimeout(() => { if (msgEl.textContent.includes('🔥')) msgEl.textContent = ""; }, 3000);
+                    setTimeout(() => { if (msgEl.textContent.includes('🔥')) msgEl.textContent = ""; }, 2000);
+                }
+            });
+
+            // オートクリッカー（自動処理）
+            let autoClickerInterval = null;
+            function startAutoClicker() {
+                if (autoClickerInterval) clearInterval(autoClickerInterval);
+                if (autoLevel > 0) {
+                    autoClickerInterval = setInterval(() => {
+                        score += autoLevel;
+                        localStorage.setItem('site_hima_score', score);
+                        scoreEl.textContent = score;
+                    }, 1000);
+                }
+            }
+            startAutoClicker();
+
+            // --- 購入処理 ---
+            const showMsg = (msg) => { msgEl.textContent = msg; setTimeout(() => { if (msgEl.textContent === msg) msgEl.textContent = ""; }, 2500); };
+
+            document.getElementById('shop-auto-click').addEventListener('click', () => {
+                const cost = getAutoCost();
+                if (score >= cost) {
+                    score -= cost;
+                    autoLevel++;
+                    localStorage.setItem('site_hima_score', score);
+                    localStorage.setItem('site_hima_auto', autoLevel);
+                    scoreEl.textContent = score;
+                    updateShopUI();
+                    showMsg("🤖 オートクリッカーを強化しました！");
+                    startAutoClicker();
+                } else {
+                    showMsg("❌ HPが足りません！");
+                }
+            });
+
+            document.getElementById('shop-power').addEventListener('click', () => {
+                const cost = getPowerCost();
+                if (score >= cost) {
+                    score -= cost;
+                    clickPower++;
+                    localStorage.setItem('site_hima_score', score);
+                    localStorage.setItem('site_hima_power', clickPower);
+                    scoreEl.textContent = score;
+                    updateShopUI();
+                    showMsg("💪 クリックパワーがアップしました！");
+                } else {
+                    showMsg("❌ HPが足りません！");
+                }
+            });
+
+            document.getElementById('shop-aura').addEventListener('click', () => {
+                if (hasAura) {
+                    showMsg("✨ すでに黄金のオーラをまとっています！");
+                    return;
+                }
+                if (score >= 500) {
+                    score -= 500;
+                    hasAura = true;
+                    localStorage.setItem('site_hima_score', score);
+                    localStorage.setItem('site_hima_aura', 'true');
+                    scoreEl.textContent = score;
+                    updateShopUI();
+                    showMsg("✨ 黄金のオーラをまとった！");
+                    createConfetti();
+                } else {
+                    showMsg("❌ HPが足りません！");
                 }
             });
 
@@ -1128,7 +1271,7 @@
                     conf.style.position = 'fixed';
                     conf.style.width = '12px';
                     conf.style.height = '12px';
-                    conf.style.backgroundColor = ['#ff0', '#f0f', '#0ff', '#0f0', '#00ff66'][Math.floor(Math.random() * 5)];
+                    conf.style.backgroundColor = ['#ff0', '#f0f', '#0ff', '#0f0', '#00ff66', 'gold'][Math.floor(Math.random() * 6)];
                     conf.style.left = (Math.random() * 100) + 'vw';
                     conf.style.top = '-20px';
                     conf.style.borderRadius = '50%';
